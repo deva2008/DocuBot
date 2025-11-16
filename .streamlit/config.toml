@@ -2,14 +2,17 @@
 gatherUsageStats = false
 
 [server]
-# Disable CORS for iframe testing and embedding
+# Allow file uploads up to 500 MB
+maxUploadSize = 500
+
+# Allow cross-origin embedding for testing (disable only if you understand security implications)
 enableCORS = false
 
 # Allow iframe embedding
 allowRunOnSave = true
 
-# Increase upload size limit
-maxUploadSize = 200
+# Optional: increase the websocket ping timeout if you have long-running ops
+# webSocketPingInterval = 60
 
 [logger]
 level = "debug"
