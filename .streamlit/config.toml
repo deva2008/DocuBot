@@ -1,2 +1,15 @@
 [browser]
 gatherUsageStats = false
+
+[server]
+# Disable CORS for iframe testing and embedding
+enableCORS = false
+
+# Allow iframe embedding
+allowRunOnSave = true
+
+# Increase upload size limit
+maxUploadSize = 200
+
+[logger]
+level = "debug"

@@ -1,5 +1,6 @@
 import streamlit as st
 from dotenv import load_dotenv
+import os
 from utils.logger import get_logger
 from utils.pdf_utils import load_pdfs
 from utils.retriever_utils import build_retriever, retrieve_chunks
@@ -14,6 +15,10 @@ def main():
     st.title("DocuBot Studio")
     st.caption("Transform documentation into AI assistants.")
 
+    # Check for required environment variables
+    if not os.getenv("OPENAI_API_KEY"):
+        st.warning("⚠️ OPENAI_API_KEY not configured. LLM features will be limited to context snippets.")
+
     uploaded_files = st.file_uploader(
         "Upload HR policy PDFs", type=["pdf"], accept_multiple_files=True
     )
@@ -27,23 +32,41 @@ def main():
         query = st.text_input("Ask a question about HR policies")
 
     if build_clicked and uploaded_files:
-        docs = load_pdfs(uploaded_files)
-        retriever = build_retriever(docs)
-        st.session_state["retriever"] = retriever
-        st.success("Index built from uploaded PDFs.")
+        try:
+            with st.spinner("📄 Loading PDFs..."):
+                docs = load_pdfs(uploaded_files)
+            
+            with st.spinner("🔍 Building index..."):
+                retriever = build_retriever(docs)
+            
+            st.session_state["retriever"] = retriever
+            st.success("✅ Index built from uploaded PDFs.")
+            logger.info(f"Successfully built index from {len(uploaded_files)} files")
+        except Exception as e:
+            st.error(f"❌ Error building index: {str(e)}")
+            logger.error(f"Build index error: {e}", exc_info=True)
 
     if st.button("Ask") and query:
-        retriever = st.session_state.get("retriever")
-        if retriever is None:
-            st.warning("Please build the index first using uploaded PDFs.")
-        else:
-            contexts = retrieve_chunks(retriever, query)
-            answer, sources = generate_answer(query, contexts)
-            st.subheader("Answer")
-            st.write(answer)
-            with st.expander("Sources / Context"):
-                for s in sources:
-                    st.write(s[:500] + ("..." if len(s) > 500 else ""))
+        try:
+            retriever = st.session_state.get("retriever")
+            if retriever is None:
+                st.warning("⚠️ Please build the index first using uploaded PDFs.")
+            else:
+                with st.spinner("🔎 Retrieving context..."):
+                    contexts = retrieve_chunks(retriever, query)
+                
+                with st.spinner("💭 Generating answer..."):
+                    answer, sources = generate_answer(query, contexts)
+                
+                st.subheader("Answer")
+                st.write(answer)
+                with st.expander("Sources / Context"):
+                    for s in sources:
+                        st.write(s[:500] + ("..." if len(s) > 500 else ""))
+                logger.info(f"Successfully answered query: {query[:50]}...")
+        except Exception as e:
+            st.error(f"❌ Error processing query: {str(e)}")
+            logger.error(f"Query error: {e}", exc_info=True)
 
 
 if __name__ == "__main__":
