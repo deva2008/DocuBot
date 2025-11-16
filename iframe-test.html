@@ -101,6 +101,7 @@
             <div class="instructions">
                 <strong>⚠️ Security Note:</strong> This removes all sandboxing. Use only for testing to confirm sandbox is the blocker. <strong>Do not use in production.</strong>
             </div>
+            <p><strong>⚠️ IMPORTANT:</strong> The Streamlit app requires authentication. If you see a redirect loop or blank iframe, the app needs to be publicly shared or you need to authenticate first.</p>
             <p>If the app loads below, the sandbox attribute was blocking it.</p>
             <iframe
                 id="test1"
@@ -178,12 +179,27 @@
             <p>Look for <code>wss://</code> connections. If they fail or don't appear, WebSocket is blocked.</p>
         </div>
 
+        <!-- AUTHENTICATION CHECK -->
+        <div class="test-section" style="background: #fff3cd; border-color: #ffc107;">
+            <h2 style="color: #856404;">🔐 Authentication Issue Detected</h2>
+            <p><strong>Problem:</strong> The Streamlit app is redirecting to an authentication page, which causes a blank iframe.</p>
+            <p><strong>Solution:</strong> You need to do ONE of the following:</p>
+            <ol>
+                <li><strong>Make the Streamlit app public:</strong> Share the app publicly so it doesn't require authentication</li>
+                <li><strong>Use a public share link:</strong> If you have a public Streamlit share link, use that URL instead</li>
+                <li><strong>Authenticate before embedding:</strong> Open the app in a separate tab first to authenticate, then the iframe may work</li>
+                <li><strong>Use a reverse proxy with auth:</strong> Proxy the app through your own server and handle authentication there</li>
+            </ol>
+            <p><strong>Check your Streamlit app settings:</strong> Go to <code>https://share.streamlit.io</code> and verify the app is set to "Public" sharing.</p>
+        </div>
+
         <!-- PRODUCTION RECOMMENDATION -->
         <div class="test-section" style="background: #e8f5e9; border-color: #4caf50;">
             <h2 style="color: #2e7d32;">📋 Production Recommendation</h2>
             <p><strong>If Test 2 works:</strong> Use the "Safer Sandbox" configuration in your production code.</p>
             <p><strong>If Test 2 fails but Test 1 works:</strong> The issue is likely X-Frame-Options or CSP headers. Use a reverse proxy (nginx/Apache) to serve the Streamlit app under your domain.</p>
             <p><strong>If neither works:</strong> Check WebSocket connectivity and response headers.</p>
+            <p><strong>If app requires authentication:</strong> Follow the steps in the "Authentication Issue Detected" section above.</p>
         </div>
     </div>
 

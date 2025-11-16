@@ -1,13 +1,32 @@
 # DocuBot Studio - Iframe Embedding Troubleshooting Guide
 
+## ⚠️ CRITICAL: Authentication Issue
+
+**The Streamlit app at `https://docubot-studio.streamlit.app` requires authentication and redirects to a login page.**
+
+This is why the iframe appears blank. The app is not accessible without authentication.
+
+### Solution: Make the App Public
+
+1. Go to **https://share.streamlit.io**
+2. Find your DocuBot Studio app
+3. Click **Settings** → **Sharing**
+4. Change sharing to **Public** (not Private)
+5. Save and refresh
+
+Once the app is public, the iframe will load without authentication.
+
+---
+
 ## Quick Start
 
-1. **Open the test page** in your browser:
+1. **First, make the Streamlit app public** (see above)
+2. **Open the test page** in your browser:
    ```
    file:///Users/pavandevarapalli/Documents/DocuBots/DocuBot/iframe-test.html
    ```
 
-2. **Follow the tests in order** to identify the blocker.
+3. **Follow the tests in order** to identify the blocker.
 
 ---
 
