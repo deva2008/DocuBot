@@ -94,67 +94,85 @@
         <h1>🧪 DocuBot Studio - Iframe Embedding Tests</h1>
         <p>This page tests different iframe sandbox configurations to identify the blocker preventing DocuBot Studio from loading.</p>
 
-        <!-- TEST 1: Remove Sandbox Entirely -->
+        <!-- TEST A: Quick Test - Remove Sandbox Entirely (Debug Only) -->
         <div class="test-section">
-            <h2>Test 1: Remove Sandbox (Quickest - Temporary Only)</h2>
+            <h2>Test A: Quick Test — Remove Sandbox (Debug Only)</h2>
             <p><strong>Status:</strong> <span class="status active">ACTIVE</span></p>
             <div class="instructions">
-                <strong>⚠️ Security Note:</strong> This removes all sandboxing. Use only for testing to confirm sandbox is the blocker. <strong>Do not use in production.</strong>
+                <strong>⚠️ Security Note:</strong> This removes all sandboxing. Use ONLY for testing to confirm WebSocket is the blocker. <strong>Do not use in production.</strong>
             </div>
-            <p><strong>⚠️ IMPORTANT:</strong> The Streamlit app requires authentication. If you see a redirect loop or blank iframe, the app needs to be publicly shared or you need to authenticate first.</p>
-            <p>If the app loads below, the sandbox attribute was blocking it.</p>
+            <p><strong>What to expect:</strong></p>
+            <ul>
+                <li>DevTools → Network → filter "WS" should show <code>wss://.../_logstream</code> with status <strong>101 Switching Protocols</strong></li>
+                <li>Console errors about "WebSocket connection failed" should disappear</li>
+                <li>Upload UI should render (no white screen)</li>
+            </ul>
+            <p><strong>Verification:</strong> Open DevTools (F12) → Network tab → Filter by "WS" → Reload this page. Look for successful wss:// connection.</p>
             <iframe
-                id="test1"
+                id="testA"
                 src="https://docubot-studio.streamlit.app"
-                style="width:100%; height:600px; border:0;"
-                title="DocuBot Studio (Test 1 - No Sandbox)">
+                style="width:100%; height:600px; border:0; min-height:720px;"
+                title="DocuBot Studio (Test A - No Sandbox)">
             </iframe>
         </div>
 
-        <!-- TEST 2: Safer Sandbox Configuration -->
+        <!-- TEST B: Safer Sandbox Configuration (Recommended Production) -->
         <div class="test-section">
-            <h2>Test 2: Safer Sandbox (Recommended)</h2>
+            <h2>Test B: Safer Sandbox (Recommended Production)</h2>
             <p><strong>Status:</strong> <span class="status inactive">INACTIVE</span></p>
             <div class="instructions">
-                <strong>✅ Recommended:</strong> This keeps sandbox protection while allowing scripts and forms. Storage is isolated from parent (no access to parent cookies/localStorage).
+                <strong>✅ Recommended:</strong> Allows scripts and forms but NOT same-origin. This prevents sandbox escape while still allowing WebSocket connections.
             </div>
-            <p>If the app loads below, this configuration works and is safe for production.</p>
-            <button onclick="toggleTest2()">Enable Test 2</button>
-            <div id="test2-container" style="display:none;">
+            <p><strong>Key difference from Test A:</strong> Removes <code>allow-same-origin</code> to prevent browser warnings while keeping sandbox protection.</p>
+            <p><strong>What to expect:</strong></p>
+            <ul>
+                <li>Upload UI should render (no white screen)</li>
+                <li>WebSocket connection should succeed (check DevTools → Network → WS)</li>
+                <li>No sandbox escape warnings in console</li>
+            </ul>
+            <button onclick="toggleTestB()">Enable Test B</button>
+            <div id="testB-container" style="display:none;">
                 <iframe
-                    id="test2"
+                    id="testB"
                     src="https://docubot-studio.streamlit.app"
-                    style="width:100%; height:600px; border:0;"
+                    style="width:100%; height:600px; border:0; min-height:720px;"
                     sandbox="allow-scripts allow-forms allow-popups"
-                    title="DocuBot Studio (Test 2 - Safer Sandbox)">
+                    title="DocuBot Studio (Test B - Safer Sandbox)">
                 </iframe>
             </div>
         </div>
 
-        <!-- TEST 3: With iframeResizer -->
+        <!-- TEST C: Reverse Proxy (Robust Production Option) -->
         <div class="test-section">
-            <h2>Test 3: With iframeResizer (Auto-sizing)</h2>
+            <h2>Test C: Reverse Proxy (Robust Production Option)</h2>
             <p><strong>Status:</strong> <span class="status inactive">INACTIVE</span></p>
             <div class="instructions">
-                <strong>ℹ️ Use if:</strong> Your parent page needs auto-sizing of the iframe based on content height.
+                <strong>🔒 Use if:</strong> Test A & B fail, or you need same-origin access, or host blocks framing via headers.
             </div>
-            <p>This requires iframeResizer library. Enable to test auto-sizing capability.</p>
-            <button onclick="toggleTest3()">Enable Test 3</button>
-            <div id="test3-container" style="display:none;">
-                <script src="https://cdnjs.cloudflare.com/ajax/libs/iframe-resizer/4.3.6/iframeResizer.min.js"></script>
-                <iframe
-                    id="test3"
-                    src="https://docubot-studio.streamlit.app"
-                    style="width:1px; min-width:100%; height:600px; border:0;"
-                    sandbox="allow-scripts allow-forms allow-popups"
-                    title="DocuBot Studio (Test 3 - With iframeResizer)">
-                </iframe>
-                <script>
-                    if (window.iFrameResize) {
-                        iFrameResize({ log: true, checkOrigin: false }, '#test3');
-                    }
-                </script>
-            </div>
+            <p><strong>Setup required:</strong> You must configure an nginx reverse proxy on your domain first.</p>
+            <p><strong>Nginx config (paste into your server block):</strong></p>
+            <pre style="background:#f0f0f0; padding:15px; border-radius:4px; overflow-x:auto; font-size:12px;">location /docubot/ {
+    proxy_pass https://docubot-studio.streamlit.app/;
+    proxy_set_header Host docubot-studio.streamlit.app;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    
+    # WebSocket support (critical)
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection "upgrade";
+    
+    proxy_buffering off;
+    proxy_read_timeout 86400;
+}</pre>
+            <p><strong>Then embed using your proxied URL:</strong></p>
+            <pre style="background:#f0f0f0; padding:15px; border-radius:4px; overflow-x:auto; font-size:12px;">&lt;iframe
+  src="https://yourdomain.com/docubot/"
+  style="width:100%; height:900px; border:0;"
+  title="DocuBot Studio (proxy)"&gt;
+&lt;/iframe&gt;</pre>
+            <p><strong>Why this works:</strong> Browser sees same-origin, WebSocket upgrade works reliably, X-Frame-Options headers are bypassed.</p>
         </div>
 
         <!-- TEST 4: Header Check -->
@@ -195,22 +213,32 @@
 
         <!-- PRODUCTION RECOMMENDATION -->
         <div class="test-section" style="background: #e8f5e9; border-color: #4caf50;">
-            <h2 style="color: #2e7d32;">📋 Production Recommendation</h2>
-            <p><strong>If Test 2 works:</strong> Use the "Safer Sandbox" configuration in your production code.</p>
-            <p><strong>If Test 2 fails but Test 1 works:</strong> The issue is likely X-Frame-Options or CSP headers. Use a reverse proxy (nginx/Apache) to serve the Streamlit app under your domain.</p>
-            <p><strong>If neither works:</strong> Check WebSocket connectivity and response headers.</p>
-            <p><strong>If app requires authentication:</strong> Follow the steps in the "Authentication Issue Detected" section above.</p>
+            <h2 style="color: #2e7d32;">📋 Quick Decision Tree</h2>
+            <p><strong>Test A (no sandbox) works?</strong> → Use Test B (safer sandbox) for production</p>
+            <p><strong>Test B (safer sandbox) works?</strong> → ✅ Use this in production</p>
+            <p><strong>Both A & B fail?</strong> → Use Test C (reverse proxy) or check headers</p>
+            <p><strong>curl shows X-Frame-Options: DENY?</strong> → Must use Test C (reverse proxy)</p>
+        </div>
+
+        <!-- WEBSOCKET VERIFICATION -->
+        <div class="test-section" style="background: #e3f2fd; border-color: #2196F3;">
+            <h2 style="color: #1565c0;">🔌 WebSocket Verification Steps</h2>
+            <ol>
+                <li>Open DevTools: <code>F12</code> or <code>Cmd+Option+I</code> (Mac)</li>
+                <li>Go to <strong>Network</strong> tab</li>
+                <li>Filter by <strong>"WS"</strong> (WebSocket)</li>
+                <li>Reload this page or enable a test above</li>
+                <li>Look for <code>wss://docubot-studio.streamlit.app/_logstream</code></li>
+                <li><strong>Success:</strong> Status shows <code>101 Switching Protocols</code></li>
+                <li><strong>Failure:</strong> Shows <code>failed</code> or doesn't appear</li>
+            </ol>
+            <p><strong>If WebSocket fails:</strong> The sandbox or network is blocking it. Try Test A first, then Test B.</p>
         </div>
     </div>
 
     <script>
-        function toggleTest2() {
-            const container = document.getElementById('test2-container');
-            container.style.display = container.style.display === 'none' ? 'block' : 'none';
-        }
-
-        function toggleTest3() {
-            const container = document.getElementById('test3-container');
+        function toggleTestB() {
+            const container = document.getElementById('testB-container');
             container.style.display = container.style.display === 'none' ? 'block' : 'none';
         }
 
