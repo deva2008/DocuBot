@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DocuBot Studio - Iframe Test</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-top: 0;
+        }
+        .test-section {
+            margin: 30px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: #fafafa;
+        }
+        .test-section h2 {
+            margin-top: 0;
+            color: #0066cc;
+            font-size: 18px;
+        }
+        .test-section p {
+            margin: 10px 0;
+            color: #666;
+            font-size: 14px;
+        }
+        .test-section code {
+            background: #f0f0f0;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Monaco', 'Menlo', monospace;
+        }
+        iframe {
+            border: 2px solid #0066cc;
+            border-radius: 4px;
+            background: white;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+        .status.active {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status.inactive {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .instructions {
+            background: #e7f3ff;
+            border-left: 4px solid #0066cc;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+        button {
+            background: #0066cc;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 5px 5px 5px 0;
+        }
+        button:hover {
+            background: #0052a3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 DocuBot Studio - Iframe Embedding Tests</h1>
+        <p>This page tests different iframe sandbox configurations to identify the blocker preventing DocuBot Studio from loading.</p>
+
+        <!-- TEST 1: Remove Sandbox Entirely -->
+        <div class="test-section">
+            <h2>Test 1: Remove Sandbox (Quickest - Temporary Only)</h2>
+            <p><strong>Status:</strong> <span class="status active">ACTIVE</span></p>
+            <div class="instructions">
+                <strong>⚠️ Security Note:</strong> This removes all sandboxing. Use only for testing to confirm sandbox is the blocker. <strong>Do not use in production.</strong>
+            </div>
+            <p>If the app loads below, the sandbox attribute was blocking it.</p>
+            <iframe
+                id="test1"
+                src="https://docubot-studio.streamlit.app"
+                style="width:100%; height:600px; border:0;"
+                title="DocuBot Studio (Test 1 - No Sandbox)">
+            </iframe>
+        </div>
+
+        <!-- TEST 2: Safer Sandbox Configuration -->
+        <div class="test-section">
+            <h2>Test 2: Safer Sandbox (Recommended)</h2>
+            <p><strong>Status:</strong> <span class="status inactive">INACTIVE</span></p>
+            <div class="instructions">
+                <strong>✅ Recommended:</strong> This keeps sandbox protection while allowing scripts and forms. Storage is isolated from parent (no access to parent cookies/localStorage).
+            </div>
+            <p>If the app loads below, this configuration works and is safe for production.</p>
+            <button onclick="toggleTest2()">Enable Test 2</button>
+            <div id="test2-container" style="display:none;">
+                <iframe
+                    id="test2"
+                    src="https://docubot-studio.streamlit.app"
+                    style="width:100%; height:600px; border:0;"
+                    sandbox="allow-scripts allow-forms allow-popups"
+                    title="DocuBot Studio (Test 2 - Safer Sandbox)">
+                </iframe>
+            </div>
+        </div>
+
+        <!-- TEST 3: With iframeResizer -->
+        <div class="test-section">
+            <h2>Test 3: With iframeResizer (Auto-sizing)</h2>
+            <p><strong>Status:</strong> <span class="status inactive">INACTIVE</span></p>
+            <div class="instructions">
+                <strong>ℹ️ Use if:</strong> Your parent page needs auto-sizing of the iframe based on content height.
+            </div>
+            <p>This requires iframeResizer library. Enable to test auto-sizing capability.</p>
+            <button onclick="toggleTest3()">Enable Test 3</button>
+            <div id="test3-container" style="display:none;">
+                <script src="https://cdnjs.cloudflare.com/ajax/libs/iframe-resizer/4.3.6/iframeResizer.min.js"></script>
+                <iframe
+                    id="test3"
+                    src="https://docubot-studio.streamlit.app"
+                    style="width:1px; min-width:100%; height:600px; border:0;"
+                    sandbox="allow-scripts allow-forms allow-popups"
+                    title="DocuBot Studio (Test 3 - With iframeResizer)">
+                </iframe>
+                <script>
+                    if (window.iFrameResize) {
+                        iFrameResize({ log: true, checkOrigin: false }, '#test3');
+                    }
+                </script>
+            </div>
+        </div>
+
+        <!-- TEST 4: Header Check -->
+        <div class="test-section">
+            <h2>Test 4: Check Response Headers</h2>
+            <p><strong>Status:</strong> <span class="status inactive">INACTIVE</span></p>
+            <div class="instructions">
+                <strong>ℹ️ Purpose:</strong> Check if the Streamlit app blocks framing via X-Frame-Options or CSP headers.
+            </div>
+            <button onclick="checkHeaders()">Check Headers</button>
+            <div id="header-results" style="margin-top: 15px; display:none; background: #f0f0f0; padding: 15px; border-radius: 4px; font-family: monospace; white-space: pre-wrap; word-break: break-all;"></div>
+        </div>
+
+        <!-- TEST 5: WebSocket Check -->
+        <div class="test-section">
+            <h2>Test 5: WebSocket Connectivity</h2>
+            <p><strong>Status:</strong> <span class="status inactive">INACTIVE</span></p>
+            <div class="instructions">
+                <strong>ℹ️ Purpose:</strong> Streamlit requires WebSocket (wss://) connections. Check DevTools → Network → filter "WS" to see if wss:// connections succeed.
+            </div>
+            <p>Open DevTools (F12 or Cmd+Option+I) → Network tab → Filter by "WS" → Then enable Test 1 or Test 2 above and reload the iframe.</p>
+            <p>Look for <code>wss://</code> connections. If they fail or don't appear, WebSocket is blocked.</p>
+        </div>
+
+        <!-- PRODUCTION RECOMMENDATION -->
+        <div class="test-section" style="background: #e8f5e9; border-color: #4caf50;">
+            <h2 style="color: #2e7d32;">📋 Production Recommendation</h2>
+            <p><strong>If Test 2 works:</strong> Use the "Safer Sandbox" configuration in your production code.</p>
+            <p><strong>If Test 2 fails but Test 1 works:</strong> The issue is likely X-Frame-Options or CSP headers. Use a reverse proxy (nginx/Apache) to serve the Streamlit app under your domain.</p>
+            <p><strong>If neither works:</strong> Check WebSocket connectivity and response headers.</p>
+        </div>
+    </div>
+
+    <script>
+        function toggleTest2() {
+            const container = document.getElementById('test2-container');
+            container.style.display = container.style.display === 'none' ? 'block' : 'none';
+        }
+
+        function toggleTest3() {
+            const container = document.getElementById('test3-container');
+            container.style.display = container.style.display === 'none' ? 'block' : 'none';
+        }
+
+        async function checkHeaders() {
+            const resultsDiv = document.getElementById('header-results');
+            resultsDiv.style.display = 'block';
+            resultsDiv.textContent = 'Checking headers...';
+
+            try {
+                const response = await fetch('https://docubot-studio.streamlit.app', {
+                    method: 'HEAD',
+                    mode: 'no-cors'
+                });
+                
+                // With no-cors, we can't read headers directly from fetch
+                // Instead, show instructions for curl
+                resultsDiv.textContent = `
+CORS prevents reading headers from browser. Use this command in terminal:
+
+curl -I https://docubot-studio.streamlit.app
+
+Look for these headers in the output:
+- X-Frame-Options: (if DENY or SAMEORIGIN, framing is blocked)
+- Content-Security-Policy: frame-ancestors (if 'none', framing is blocked)
+
+If you see these headers blocking framing, you'll need a reverse proxy.
+                `;
+            } catch (error) {
+                resultsDiv.textContent = `Error: ${error.message}\n\nUse curl command instead:\ncurl -I https://docubot-studio.streamlit.app`;
+            }
+        }
+
+        // Log when page loads
+        console.log('DocuBot Studio iframe test page loaded');
+        console.log('Open DevTools (F12) to see console logs and Network tab for WebSocket connections');
+    </script>
+</body>
+</html>
