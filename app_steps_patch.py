@@ -27,6 +27,23 @@ except Exception:
 PAGE_TITLE = "DocuBot Studio — Configuration Explorer"
 st.set_page_config(page_title=PAGE_TITLE, layout="wide", initial_sidebar_state="expanded")
 
+# Query flags: allow light mode to avoid heavy model downloads on Streamlit Cloud
+_params = {}
+try:
+    _params = {k: v for k, v in st.query_params.items()}
+except Exception:
+    try:
+        _params = st.experimental_get_query_params()
+    except Exception:
+        _params = {}
+def _get_flag(name: str, default: bool = False) -> bool:
+    v = _params.get(name, default)
+    if isinstance(v, list):
+        v = v[0] if v else ""
+    return str(v).lower() in ("1", "true", "yes") if isinstance(v, (str,)) else bool(v)
+
+LIGHT_MODE = _get_flag("light", False)
+
 # ---- Steps metadata (same as your design) ----
 STEPS = [
     {"id": 1, "title": "Upload PDF(s)"},
@@ -459,6 +476,9 @@ with main_col:
                         st.session_state.chunks = filtered
                         st.session_state.embeddings = None
                         st.session_state.index = None
+                        # In light mode, force lexical backend (no embeddings/index builds)
+                        if LIGHT_MODE:
+                            st.session_state.retrieval_backend = "lexical"
                     # Build and persist processed file summary
                     file_pages = {}
                     for p in pages:
@@ -479,8 +499,8 @@ with main_col:
                             st.markdown(f"{i}. {meta}")
                             st.write(ch.get("text", "")[:400])
 
-                    # 2) Compute embeddings
-                    if st.session_state.chunks:
+                    # 2) Compute embeddings (skip in light mode)
+                    if st.session_state.chunks and not LIGHT_MODE:
                         with st.spinner("Computing embeddings..."):
                             texts = [c["text"] for c in st.session_state.chunks]
                             try:
@@ -489,8 +509,8 @@ with main_col:
                                 st.error(f"Embedding computation failed: {e}. Falling back to lexical retrieval only.")
                                 embs = None
                             st.session_state.embeddings = embs
-                    # 3) Build index
-                    if st.session_state.get("embeddings") is not None:
+                    # 3) Build index (skip in light mode)
+                    if not LIGHT_MODE and st.session_state.get("embeddings") is not None:
                         with st.spinner("Building index..."):
                             st.session_state.index = build_index(st.session_state.embeddings)
                     # 4) Mark steps 1–7 complete and launch chat
