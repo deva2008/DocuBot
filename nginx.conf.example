@@ -1,0 +1,96 @@
+# Nginx Configuration for DocuBot Studio Proxy
+# 
+# This is an EXAMPLE configuration. Adapt it to your setup.
+# Key points:
+# 1. Replace yourdomain.com with your actual domain
+# 2. Replace /path/to/fullchain.pem and /path/to/privkey.pem with your SSL cert paths
+# 3. The trailing slash in proxy_pass is CRITICAL
+# 4. WebSocket headers must be present
+# 5. After editing, run: sudo nginx -t && sudo systemctl reload nginx
+
+server {
+    listen 443 ssl;
+    server_name yourdomain.com;
+
+    # --- TLS Configuration ---
+    # Replace these paths with your actual SSL certificate paths
+    ssl_certificate /path/to/fullchain.pem;
+    ssl_certificate_key /path/to/privkey.pem;
+    
+    # Optional: SSL security settings
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers HIGH:!aNULL:!MD5;
+    ssl_prefer_server_ciphers on;
+
+    # Allow large uploads
+    client_max_body_size 500M;
+
+    # Main DocuBot proxy location
+    location /docubot/ {
+        # IMPORTANT: trailing slash on proxy_pass ensures remainder of path is appended correctly
+        # If you omit the trailing slash you can get surprising path rewrite behaviour
+        proxy_pass https://docubot-studio.streamlit.app/;
+
+        # Preserve original request headers
+        proxy_set_header Host docubot-studio.streamlit.app;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        # WebSocket support (REQUIRED for Streamlit)
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection $http_connection;
+
+        # Avoid buffering/timeouts for large uploads & streaming
+        proxy_buffering off;
+        proxy_request_buffering off;
+        
+        # Increase timeouts for long-running operations
+        proxy_read_timeout 86400;
+        proxy_send_timeout 86400;
+    }
+
+    # Optional: redirect HTTP to HTTPS
+    # Uncomment if you want to force HTTPS
+    # location / {
+    #     return 301 https://$server_name$request_uri;
+    # }
+}
+
+# Optional: HTTP redirect (if you want to force HTTPS)
+# Uncomment this block if needed
+# server {
+#     listen 80;
+#     server_name yourdomain.com;
+#     return 301 https://$server_name$request_uri;
+# }
+
+# ===== TROUBLESHOOTING =====
+#
+# If WebSocket shows a path like /~/logstream (with ~/ prefix), add this rewrite:
+#
+# location /docubot/ {
+#     # Strip /docubot/ and remove any "~/" inserted by path rewriting
+#     rewrite ^/docubot/~/(.*)$ /$1 break;
+#
+#     proxy_pass https://docubot-studio.streamlit.app/;
+#     ... (rest of config)
+# }
+#
+# If you see "client intended to send body larger than client_max_body_size":
+# Increase client_max_body_size (e.g., to 1000M)
+#
+# If WebSocket still fails after all changes:
+# 1. Check nginx error log: sudo tail -f /var/log/nginx/error.log
+# 2. Check upstream server logs
+# 3. Verify SSL certificate is valid: openssl s_client -connect yourdomain.com:443
+#
+# ===== VERIFICATION =====
+#
+# After making changes:
+# 1. Test config: sudo nginx -t
+# 2. Reload nginx: sudo systemctl reload nginx
+# 3. Check it's working: curl -I https://yourdomain.com/docubot/
+# 4. In browser DevTools → Network → filter WS, look for wss://yourdomain.com/... with status 101
+#

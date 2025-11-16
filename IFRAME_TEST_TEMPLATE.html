@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DocuBot Studio - Iframe Debug Test</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-top: 0;
+        }
+        .test-section {
+            margin: 30px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: #fafafa;
+        }
+        .test-section h2 {
+            margin-top: 0;
+            color: #0066cc;
+            font-size: 18px;
+        }
+        .instructions {
+            background: #e7f3ff;
+            border-left: 4px solid #0066cc;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+        .status.active {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        code {
+            background: #f0f0f0;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 13px;
+        }
+        pre {
+            background: #f0f0f0;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+        iframe {
+            border: 2px solid #0066cc;
+            border-radius: 4px;
+            background: white;
+        }
+        .warning {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 15px 0;
+            color: #856404;
+        }
+        .success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 15px 0;
+            color: #155724;
+        }
+        ol, ul {
+            line-height: 1.8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 DocuBot Studio - Iframe Debug Test</h1>
+        <p>Use this page to test and debug the iframe embedding. Follow the steps below.</p>
+
+        <!-- TEST 1: No Sandbox (Debug) -->
+        <div class="test-section">
+            <h2>Test 1: No Sandbox (Debug Only)</h2>
+            <p><strong>Status:</strong> <span class="status active">ACTIVE - TEST THIS FIRST</span></p>
+            <div class="instructions">
+                <strong>🧪 Purpose:</strong> Remove all sandbox restrictions to rule out sandbox/postMessage blocking.
+                <br><strong>⚠️ Security:</strong> This is for testing only. Do NOT use in production.
+                <br><strong>What to do:</strong> Click Browse files below. If it works, sandbox is the blocker.
+            </div>
+            <p><strong>Expected behavior:</strong></p>
+            <ul>
+                <li>Upload UI renders (no white screen)</li>
+                <li>Can click "Browse files" without blank screen</li>
+                <li>DevTools → Network → filter WS shows <code>wss://.../_logstream</code> with status <strong>101</strong></li>
+            </ul>
+            <p><strong>Iframe code (no sandbox):</strong></p>
+            <pre>&lt;!-- TEMP TEST: No sandbox at all (debug). Paste this and reload parent page. --&gt;
+&lt;iframe
+  id="docubot"
+  src="https://docubot-studio.streamlit.app"
+  style="width:100%; height:900px; border:0; min-height:720px;"
+  title="DocuBot Studio (test - no sandbox)"&gt;
+&lt;/iframe&gt;</pre>
+            <iframe
+                id="test1"
+                src="https://docubot-studio.streamlit.app"
+                style="width:100%; height:900px; border:0; min-height:720px;"
+                title="DocuBot Studio (test - no sandbox)">
+            </iframe>
+        </div>
+
+        <!-- TEST 2: Safe Sandbox (Recommended) -->
+        <div class="test-section">
+            <h2>Test 2: Safe Sandbox (Recommended Production)</h2>
+            <p><strong>Status:</strong> <span class="status">INACTIVE - Use after Test 1 works</span></p>
+            <div class="instructions">
+                <strong>✅ Purpose:</strong> If Test 1 works, use this safer sandbox configuration for production.
+                <br><strong>Key:</strong> Allows scripts/forms/popups but NOT <code>allow-same-origin</code>.
+                <br><strong>What to do:</strong> After Test 1 succeeds, replace your iframe with this code.
+            </div>
+            <p><strong>Iframe code (safe sandbox):</strong></p>
+            <pre>&lt;!-- Safer: allow scripts but NOT allow-same-origin --&gt;
+&lt;iframe
+  id="docubot"
+  src="https://docubot-studio.streamlit.app"
+  style="width:100%; height:900px; border:0; min-height:720px;"
+  sandbox="allow-scripts allow-forms allow-popups"
+  title="DocuBot Studio (safe)"&gt;
+&lt;/iframe&gt;</pre>
+            <p><strong>⚠️ Important:</strong> Do NOT include <code>allow-same-origin</code> in the sandbox attribute. That combination blocks WebSocket handshakes.</p>
+        </div>
+
+        <!-- Verification Steps -->
+        <div class="test-section">
+            <h2>🔍 Verification Steps (Do This Now)</h2>
+            <div class="instructions">
+                <strong>Follow these steps to verify WebSocket is working:</strong>
+            </div>
+            <ol>
+                <li>Open this page in <strong>Incognito window</strong> (disable extensions)</li>
+                <li>Open DevTools: <code>F12</code> or <code>Cmd+Option+I</code> (Mac)</li>
+                <li>Go to <strong>Network</strong> tab</li>
+                <li>Filter by <strong>"WS"</strong> (WebSocket)</li>
+                <li>Reload this page</li>
+                <li>Look for <code>wss://docubot-studio.streamlit.app/_logstream</code> (or similar)</li>
+                <li>Check the status:
+                    <ul>
+                        <li>✅ <strong>101 Switching Protocols</strong> = WebSocket works</li>
+                        <li>❌ <strong>failed</strong> = WebSocket blocked</li>
+                        <li>❌ <strong>No WS entry</strong> = WebSocket blocked</li>
+                    </ul>
+                </li>
+                <li>Try clicking "Browse files" in the iframe above</li>
+                <li>Check if UI goes blank or renders upload dialog</li>
+            </ol>
+        </div>
+
+        <!-- If Test 1 Works -->
+        <div class="test-section" style="background: #d4edda; border-color: #28a745;">
+            <h2 style="color: #155724;">✅ If Test 1 (No Sandbox) Works</h2>
+            <div class="success">
+                <strong>Great!</strong> Sandbox is the blocker. Now:
+                <ol>
+                    <li>Replace your iframe with <strong>Test 2 (Safe Sandbox)</strong> code above</li>
+                    <li>Reload your parent page</li>
+                    <li>Verify WebSocket still shows status <strong>101</strong></li>
+                    <li>Test upload functionality</li>
+                    <li>If Test 2 works, use that in production</li>
+                </ol>
+            </div>
+        </div>
+
+        <!-- If Test 1 Fails -->
+        <div class="test-section" style="background: #fff3cd; border-color: #ffc107;">
+            <h2 style="color: #856404;">❌ If Test 1 (No Sandbox) Still Fails</h2>
+            <div class="warning">
+                <strong>WebSocket is still blocked.</strong> Likely causes:
+                <ol>
+                    <li><strong>Proxy path rewriting:</strong> If you use nginx, the proxy may be rewriting paths incorrectly</li>
+                    <li><strong>X-Frame-Options header:</strong> Upstream host blocks framing</li>
+                    <li><strong>Network/firewall:</strong> WebSocket connections blocked</li>
+                </ol>
+                <p><strong>Next steps:</strong></p>
+                <ol>
+                    <li>Copy the full failing WebSocket URL from DevTools (right-click → Copy → Copy link address)</li>
+                    <li>Paste it here (in a comment or message)</li>
+                    <li>Also paste the last 40 lines of your Streamlit server log</li>
+                    <li>I'll provide the exact fix</li>
+                </ol>
+            </div>
+        </div>
+
+        <!-- Nginx Configuration -->
+        <div class="test-section">
+            <h2>🔧 Nginx Configuration (If You Use Proxy)</h2>
+            <div class="instructions">
+                <strong>If you proxy the app at https://yourdomain.com/docubot/, use this exact nginx block:</strong>
+            </div>
+            <pre>server {
+    listen 443 ssl;
+    server_name yourdomain.com;
+
+    # --- TLS cert/key here ---
+    ssl_certificate /path/to/fullchain.pem;
+    ssl_certificate_key /path/to/privkey.pem;
+
+    # allow large uploads if needed
+    client_max_body_size 500M;
+
+    location /docubot/ {
+        # IMPORTANT: trailing slash on proxy_pass ensures remainder of path is appended correctly
+        proxy_pass https://docubot-studio.streamlit.app/;
+
+        proxy_set_header Host docubot-studio.streamlit.app;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        # WebSocket support (must be present)
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection $http_connection;
+
+        # Avoid buffering/timeouts for large uploads & streaming
+        proxy_buffering off;
+        proxy_request_buffering off;
+        proxy_read_timeout 86400;
+        proxy_send_timeout 86400;
+    }
+}</pre>
+            <p><strong>Key points:</strong></p>
+            <ul>
+                <li>Note the <strong>trailing slash</strong> on <code>proxy_pass</code> — this is critical</li>
+                <li>WebSocket headers must be present</li>
+                <li>After updating, run: <code>sudo nginx -t && sudo systemctl reload nginx</code></li>
+            </ul>
+        </div>
+
+        <!-- Streamlit Config -->
+        <div class="test-section">
+            <h2>⚙️ Streamlit Configuration (.streamlit/config.toml)</h2>
+            <div class="instructions">
+                <strong>If you run Streamlit locally or control the server, use this config:</strong>
+            </div>
+            <pre>[server]
+# increase upload limit (megabytes)
+maxUploadSize = 500
+
+# allow embedding during tests (use carefully)
+enableCORS = false</pre>
+            <p><strong>Then restart Streamlit:</strong></p>
+            <pre>pkill -f streamlit && streamlit run streamlit_app.py</pre>
+        </div>
+
+        <!-- Summary -->
+        <div class="test-section" style="background: #e3f2fd; border-color: #2196F3;">
+            <h2 style="color: #1565c0;">📋 Summary - What to Do Right Now</h2>
+            <ol>
+                <li><strong>You are already on Test 1 (no sandbox).</strong> Try clicking "Browse files" in the iframe above.</li>
+                <li><strong>Open DevTools</strong> (F12) → Network → filter "WS" to verify WebSocket status.</li>
+                <li><strong>If it works:</strong> Use Test 2 (safe sandbox) code in your production iframe.</li>
+                <li><strong>If it fails:</strong> Copy the failing WebSocket URL and Streamlit logs and paste them here.</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        console.log('DocuBot Studio iframe debug test page loaded');
+        console.log('Open DevTools → Network → filter "WS" to see WebSocket connections');
+    </script>
+</body>
+</html>
